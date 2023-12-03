@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tomato_7</title>
+</head>
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+    }
+
+    body {
+        /* position: fixed; */
+        padding: auto;
+        width: 100%;
+    }
+
+    .main {
+        margin: 100px auto;
+    }
+
+    .begin,
+    .pause {
+        height: 30px;
+        text-align: center;
+        line-height: 30px;
+        border: 1px solid;
+        font-weight: 200;
+        border-color: #fff #a1a1a1 #a1a1a1 #fff;
+
+    }
+
+    .btns {
+        height: 40px;
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .canvas {
+        border: 1px solid black;
+        /* background-color: #a1a1a1; */
+        position: relative;
+        margin: 30px auto;
+        word-wrap: break-word;
+        overflow: hidden;
+    }
+
+    .restart {
+        height: 50px;
+        width: 100px;
+        font-weight: 200;
+        border: 1px solid black;
+        font-size: 20px;
+        border-radius: 10px;
+        position: fixed;
+        margin: -200px 35%;
+        display: none;
+    }
+
+    .up,
+    .down,
+    .left,
+    .right {
+        height: 60px;
+        width: 60px;
+        border: 1px solid;
+        border-color: #fff #a1a1a1 #a1a1a1 #fff;
+        border-radius: 50%;
+    }
+
+    .remove2 {
+        display: flex;
+        justify-content: space-between;
+        width: 200px;
+        height: 60px;
+        /* border: 1px solid black; */
+        margin: -140px auto;
+    }
+
+    .remove1 {
+        display: flex;
+        justify-content: space-between;
+        flex-direction: column;
+        width: 60px;
+        height: 200px;
+        /* border: 1px solid black; */
+        margin: 10px auto;
+    }
+</style>
+
+<body>
+    <div class="main">
+        <div class="btns">
+            <input class="begin" type="button" value="开始游戏">
+            <input class="pause" type="button" value="暂停游戏">
+            <div class="count">
+                得分：
+                <span class="num">0</span>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="remove1">
+        <button class="up" onclick="remove(1)">上</button>
+        <button class="down" onclick="remove(3)">下</button>
+
+    </div>
+    <div class="remove2">
+        <button class="left" onclick="remove(4)">左</button>
+        <button class="right" onclick="remove(2)">右</button>
+    </div>
+
+    <input type="button" class="restart" value="重新开始"></input>
+    <script>
+        var main = document.querySelector(".main")
+        var showcanvas = false;
+        var count = 0;
+        var restart = document.querySelector(".restart")
+
+        //地图构建
+        function Map(atom, xnum, ynum) {
+            this.atom = atom;
+            this.xnum = xnum;
+            this.ynum = ynum;
+
+            this.canvas = null;
+            console.log(this.atom, this.xnum, this.ynum);
+            this.create = function () {
+                this.canvas = document.createElement("div");
+                this.canvas.className = "canvas"
+                this.canvas.style.height = this.atom * this.ynum + 'px';
+                this.canvas.style.width = this.atom * this.xnum + 'px';
+
+                main.appendChild(this.canvas)
+
+                if (showcanvas) {
+                    for (var y = 0; y < ynum; y++)
+                        for (var x = 0; x < xnum; x++) {
+                            var a = document.createElement("div")
+
+                            a.style.cssText = "border:1px solid red;backgroup:green;"
+                            a.style.height = this.atom + 'px';
+                            a.style.width = this.atom + 'px';
+                            this.canvas.appendChild(a)
+                            a.style.position = "absolute"
+                            a.style.left = x * this.atom + 'px';
+                            a.style.top = y * this.atom + 'px';
+
+                        }
+                }
+            }
+        }
+
+        function Food(map) {
+            this.height = map.atom
+            this.width = map.atom
+            this.bgcolor = "rgb(" + Math.floor(Math.random() * 200) + "," + Math.floor(Math.random() * 200) + "," + Math.floor(Math.random() * 200) + ")"
+
+            this.x = Math.floor(Math.random() * map.xnum)
+            this.y = Math.floor(Math.random() * map.ynum)
+            console.log(this.x, this.y);
+            this.flag = document.createElement("div")
+            this.flag.style.width = this.width + 'px'
+            this.flag.style.height = this.height + 'px'
+            this.flag.style.backgroundColor = this.bgcolor
+            this.flag.style.border = "1px solid red"
+            this.flag.style.borderRadius = "50%"
+            this.flag.style.position = "absolute"
+            this.flag.style.left = this.x * map.atom + 'px';
+            this.flag.style.top = this.y * map.atom + 'px';
+            map.canvas.appendChild(this.flag)
+
+        }
+
+
+        function Snake(map) {
+            this.height = map.atom
+            this.width = map.atom
+            //默认走向
+            this.dirction = "right"
+
+            this.body = [
+                { x: 2, y: 0 },
+                { x: 1, y: 0 },
+                { x: 0, y: 0 }
+            ]
+
+            //显示蛇
+            this.disply = function () {
+                for (var i = 0; i < this.body.length; i++) {
+                    if (this.body[i].x != null) {
+                        var s = document.createElement("div");
+                        this.body[i].flag = s;
+                        s.style.height = this.height + "px"
+                        s.style.width = this.width + "px"
+                        s.style.backgroundColor = "rgb(" + Math.floor(Math.random() * 200) + "," + Math.floor(Math.random() * 200) + "," + Math.floor(Math.random() * 200) + ")"
+                        s.style.position = "absolute"
+                        s.style.left = this.body[i].x * this.width + 'px'
+                        s.style.top = this.body[i].y * this.height + 'px'
+
+                        map.canvas.appendChild(s)
+                    }
+                }
+                document.querySelector(".num").innerHTML = count;
+            }
+
+
+            //蛇运动
+            this.run = function () {
+                for (var i = this.body.length - 1; i > 0; i--) {
+                    this.body[i].x = this.body[i - 1].x;
+                    this.body[i].y = this.body[i - 1].y;
+                }
+                //  this.body[0].x += 1
+                //this.body[0].y += 1
+                switch (this.dirction) {
+                    case "left":
+                        this.body[0].x -= 1
+                        break;
+                    case "right":
+                        this.body[0].x += 1
+                        break;
+                    case "up":
+                        this.body[0].y -= 1
+                        break;
+                    case "down":
+                        this.body[0].y += 1
+                        break;
+
+                }
+
+                if (this.body[0].x == food.x && this.body[0].y == food.y) {
+                    this.body.push({ x: null, y: null, flag: null })
+
+                    map.canvas.removeChild(food.flag)
+                    food = new Food(map)
+
+                    count += 1;
+                }
+                //死了
+                if (this.body[0].x < 0 || this.body[0].x > map.xnum - 1 || this.body[0].y < 0 || this.body[0].y > map.ynum - 1) {
+                    clearInterval(timer)
+                    console.log(restart);
+                    alert("真笨啊，撞墙撞死了")
+                    restart.style.display = "block"
+                }
+                for (var i = 4; i < this.body.length; i++) {
+                    if (this.body[0].x == this.body[i].x && this.body[0].y == this.body[i].y) {
+                        clearInterval(timer)
+                        console.log(restart);
+                        alert("不能撞向自己o")
+                        restart.style.display = "block"
+                    }
+                }
+
+                //console.log(this.body[0].flag);
+                for (var i = 0; i < this.body.length; i++) {
+                    if (this.body[i].flag != null) {
+                        map.canvas.removeChild(this.body[i].flag)
+                    }
+                }
+                this.disply();
+            }
+        }
+        var map = new Map(10, 35, 35)
+        map.create()
+
+        var food = new Food(map);
+
+        var snake = new Snake(map)
+        snake.disply()
+
+
+        //给按键绑定方法控制蛇的走向
+        function remove(e) {
+            switch (e) {
+                case 1:
+                    if (snake.dirction != "down")
+                        snake.dirction = "up"
+                    break;
+                case 2:
+                    if (snake.dirction != "left")
+                        snake.dirction = "right"
+                    break;
+                case 3:
+                    if (snake.dirction != "up")
+                        snake.dirction = "down"
+                    break;
+                case 4:
+                    if (snake.dirction != "right")
+                        snake.dirction = "left"
+                    break;
+
+            }
+        }
+        var timer;
+
+        restart.onclick = function () {
+            location.reload();
+        }
+
+        document.querySelector(".begin").onclick = function () {
+            clearInterval(timer);
+            timer = setInterval(function () {
+                snake.run()
+
+            }, 300);
+        }
+        document.querySelector(".pause").onclick = function () {
+            clearInterval(timer);
+        }
+    </script>
+</body>
+
+</html>
